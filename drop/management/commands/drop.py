@@ -39,6 +39,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.MIGRATE_LABEL('  No SQLite file is found'))
 
     def _remove_migrations_files(self):
+        excluded_words = ['__init__.py', '__pycache__']
+
         paths = []
         for app in settings.INSTALLED_APPS:
             try:
@@ -52,7 +54,7 @@ class Command(BaseCommand):
         for path in paths:
             files = glob.glob(f'{path}/migrations/*')
             for f in files:
-                if '__init__.py' in f:
+                if any(word in f for word in excluded_words):
                     continue
 
                 self.stdout.write(self.style.MIGRATE_LABEL(f'  Removing {f}...'), ending='')
