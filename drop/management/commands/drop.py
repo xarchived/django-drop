@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
-    help = 'Clean all migration files and recreate schema'
+    help = 'Clean all migration files and recreate database'
 
     def _drop_postgres(self):
         try:
@@ -15,6 +15,7 @@ class Command(BaseCommand):
         except ImportError:
             raise CommandError('Package not found (psycopg2)')
 
+        self.stdout.write(self.style.MIGRATE_LABEL(f'  Dropping PostgreSQL...'), ending='')
         con = psycopg2.connect(
             host=settings.DATABASES['default']['HOST'],
             port=settings.DATABASES['default']['PORT'],
@@ -26,15 +27,16 @@ class Command(BaseCommand):
             cur.execute('drop schema if exists public cascade')
         con.commit()
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully dropped public schema of PostgreSQL database'))
+        self.stdout.write(self.style.SUCCESS(' OK'))
 
     def _drop_sqlite(self):
         db_file = settings.DATABASES['default']['NAME']
         if os.path.isfile(db_file):
+            self.stdout.write(self.style.MIGRATE_LABEL(f'  Dropping SQLite...'), ending='')
             os.remove(db_file)
-            self.stdout.write(self.style.SUCCESS('Successfully deleted SQLite db file'))
+            self.stdout.write(self.style.SUCCESS(' OK'))
         else:
-            self.stdout.write(self.style.WARNING('No SQLite file is found'))
+            self.stdout.write(self.style.MIGRATE_LABEL('  No SQLite file is found'))
 
     def _remove_migrations_files(self):
         paths = []
@@ -46,8 +48,6 @@ class Command(BaseCommand):
 
             paths += module_.__path__
 
-        self.stdout.write(self.style.MIGRATE_HEADING('Removing migrations:'))
-
         deleted = False
         for path in paths:
             files = glob.glob(f'{path}/migrations/*')
@@ -55,7 +55,7 @@ class Command(BaseCommand):
                 if '__init__.py' in f:
                     continue
 
-                self.stdout.write(self.style.HTTP_SUCCESS(f'  Removing {f}...'), ending='')
+                self.stdout.write(self.style.MIGRATE_LABEL(f'  Removing {f}...'), ending='')
                 deleted = True
 
                 if os.path.isdir(f):
@@ -66,9 +66,10 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(' OK'))
 
         if not deleted:
-            self.stdout.write(self.style.HTTP_SUCCESS('  No migrations to delete'))
+            self.stdout.write(self.style.MIGRATE_LABEL('  No migrations to delete'))
 
     def handle(self, *args, **options):
+        self.stdout.write(self.style.MIGRATE_HEADING('Dropping databases:'))
         engine = settings.DATABASES['default']['ENGINE']
         if engine == 'django.db.backends.postgresql_psycopg2':
             self._drop_postgres()
@@ -77,4 +78,5 @@ class Command(BaseCommand):
         else:
             raise CommandError(f'Engine not supported ({engine})')
 
+        self.stdout.write(self.style.MIGRATE_HEADING('Removing migrations:'))
         self._remove_migrations_files()
