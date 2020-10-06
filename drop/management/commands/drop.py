@@ -24,7 +24,7 @@ class Command(BaseCommand):
             database=settings.DATABASES['default']['NAME'])
 
         with con.cursor() as cur:
-            cur.execute('drop schema if exists public cascade')
+            cur.execute('drop schema if exists public cascade; create schema public')
         con.commit()
 
         self.stdout.write(self.style.SUCCESS(' OK'))
