@@ -73,7 +73,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.MIGRATE_HEADING('Dropping databases:'))
         engine = settings.DATABASES['default']['ENGINE']
-        if engine == 'django.db.backends.postgresql_psycopg2':
+        if engine == 'django.db.backends.postgresql_psycopg2' or engine == 'django.contrib.gis.db.backends.postgis':
             self._drop_postgres()
         elif engine == 'django.db.backends.sqlite3':
             self._drop_sqlite()
