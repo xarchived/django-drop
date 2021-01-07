@@ -9,6 +9,9 @@ from django.core.management.base import BaseCommand, CommandError
 class Command(BaseCommand):
     help = 'Clean all migration files and recreate database'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--migration', '-m', action='store_true')
+
     def _drop_postgres(self):
         try:
             import psycopg2
@@ -80,5 +83,6 @@ class Command(BaseCommand):
         else:
             raise CommandError(f'Engine not supported ({engine})')
 
-        self.stdout.write(self.style.MIGRATE_HEADING('Removing migrations:'))
-        self._remove_migrations_files()
+        if options['migration']:
+            self.stdout.write(self.style.MIGRATE_HEADING('Removing migrations:'))
+            self._remove_migrations_files()
